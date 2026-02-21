@@ -55,8 +55,8 @@ Example MySQL config in `backend/.env`:
 ```env
 DB_ENGINE=mysql
 DB_NAME=pet_vaccination_db
-DB_USER=vikas
-DB_PASSWORD=vikas123
+DB_USER=user
+DB_PASSWORD=password
 DB_HOST=127.0.0.1
 DB_PORT=3306
 ```
@@ -66,7 +66,7 @@ Create MySQL database/user (adjust as needed):
 ```bash
 sudo systemctl start mysql
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS pet_vaccination_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-sudo mysql -e "CREATE USER IF NOT EXISTS 'vikas'@'127.0.0.1' IDENTIFIED BY 'vikas123';"
+sudo mysql -e "CREATE USER IF NOT EXISTS 'user'@'127.0.0.1' IDENTIFIED BY 'password';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON pet_vaccination_db.* TO 'vikas'@'127.0.0.1'; FLUSH PRIVILEGES;"
 ```
 
