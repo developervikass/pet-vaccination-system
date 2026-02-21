@@ -40,3 +40,4 @@ frontend/.env
 .idea/
 .DS_Store
 Thumbs.db
+backend/sqlite_export.json
