@@ -1,0 +1,28 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+
+class User(AbstractUser):
+    ROLE_CHOICES = (
+        ("owner", "Owner"),
+        ("doctor", "Doctor"),
+        ("admin", "Admin"),
+    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    phone = models.CharField(max_length=15)
+    bio = models.TextField(blank=True, null=True)
+    profile_photo = models.FileField(upload_to="doctor_profiles/", blank=True, null=True)
+    DOCTOR_STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("discarded", "Discarded"),
+    )
+    doctor_status = models.CharField(
+        max_length=10,
+        choices=DOCTOR_STATUS_CHOICES,
+        default="approved",
+    )
+    doctor_approved = models.BooleanField(default=True)
+    doctor_verified = models.BooleanField(default=True)
+    reset_otp = models.CharField(max_length=6, blank=True, null=True)
+    reset_otp_expires_at = models.DateTimeField(blank=True, null=True)

@@ -1,0 +1,134 @@
+/* OwnerDashboard.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+.owner-dashboard {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 100vh;
+  padding: 2rem 0 4rem;
+  background: radial-gradient(circle at top right, #f0f7ff 0%, #ffffff 100%);
+  color: #2d3748;
+}
+
+.dashboard-header h2 {
+  font-weight: 800;
+  color: #1a365d;
+  letter-spacing: -1px;
+}
+
+.owner-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid #eef2f7;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+.owner-panel h5 {
+  font-weight: 700;
+  color: #2c5282;
+  margin-bottom: 1.5rem;
+}
+
+/* Grid for adding pets */
+.owner-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.owner-file-field {
+  grid-column: span 2;
+}
+
+.owner-input {
+  background: #f8fafc;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.owner-input:focus {
+  background: #fff;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
+  outline: none;
+}
+
+.form-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+/* Balanced Pet List */
+.owner-pet-list {
+  padding: 0;
+  list-style: none;
+}
+
+.owner-pet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Vertical alignment fix */
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.owner-pet-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.owner-pet-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.owner-pet-name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #1a365d;
+  margin-bottom: 4px;
+}
+
+.owner-pet-meta .badge {
+  font-weight: 600;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+/* Button Group Balance */
+.owner-pet-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-shrink: 0; /* Prevents button squishing */
+}
+
+.owner-pet-actions .btn {
+  height: 40px;
+  min-width: 110px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .owner-form-grid { grid-template-columns: 1fr; }
+  .owner-file-field { grid-column: span 1; }
+  .owner-pet-item { flex-direction: column; align-items: flex-start; }
+  .owner-pet-actions { width: 100%; margin-top: 1rem; }
+  .owner-pet-actions .btn { flex: 1; }
+}

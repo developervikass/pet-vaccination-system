@@ -1,0 +1,118 @@
+/* Login.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+.login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #f8fafc;
+  position: relative;
+  overflow: hidden; /* Keeps the blur blobs inside */
+}
+
+/* Blurish Background Blobs */
+.login-shell::before,
+.login-shell::after {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.login-shell::before {
+  background: #63b3ed; /* Blue blob */
+  top: -100px;
+  left: -100px;
+}
+
+.login-shell::after {
+  background: #68d391; /* Green blob */
+  bottom: -100px;
+  right: -100px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.9); /* Semi-transparent */
+  backdrop-filter: blur(10px); /* Frosted glass effect */
+  border-radius: 28px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  padding: 3rem 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  position: relative;
+  z-index: 1; /* Sits above the blobs */
+}
+
+.login-card h2 {
+  font-weight: 800;
+  color: #1a365d;
+  margin-bottom: 2rem;
+  text-align: center;
+  letter-spacing: -1px;
+}
+
+/* Form Controls */
+.login-card .form-control {
+  background: rgba(241, 245, 249, 0.5);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  color: #334155;
+}
+
+.login-card .form-control:focus {
+  background: #fff;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
+  outline: none;
+}
+
+/* Primary Button */
+.login-card .btn-primary {
+  background: #3182ce;
+  border: none;
+  border-radius: 14px;
+  padding: 0.9rem;
+  font-weight: 700;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.login-card .btn-primary:hover {
+  background: #2b6cb0;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(49, 130, 206, 0.2);
+}
+
+.text-danger {
+  background: rgba(255, 245, 245, 0.8);
+  color: #c53030;
+  padding: 0.8rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  border: 1px solid #fed7d7;
+}
+
+.login-card p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.login-card a {
+  color: #3182ce;
+  text-decoration: none;
+  font-weight: 600;
+}

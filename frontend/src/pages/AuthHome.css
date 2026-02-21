@@ -1,0 +1,337 @@
+/* AuthHome.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+:root {
+  --primary: #3182ce;
+  --secondary: #38a169;
+  --dark: #1a202c;
+  --bg-soft: #f8fbff;
+  --text-main: #2d3748;
+  --text-muted: #718096;
+}
+
+.home-page {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  min-height: 100vh;
+  background-color: #ffffff;
+  color: var(--text-main);
+}
+
+/* Navbar Styling */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 1rem 0;
+}
+
+.nav-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-brand {
+  font-weight: 800;
+  font-size: 1.5rem;
+  color: var(--primary) !important;
+  text-decoration: none;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.nav-right .btn {
+  white-space: nowrap;
+}
+
+.nav-link {
+  font-weight: 600;
+  color: var(--text-main) !important;
+  margin-left: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-admin-btn {
+  margin-left: 0.2rem;
+}
+
+/* Hero Section */
+.home-hero {
+  padding: 8rem 0 6rem;
+  background: 
+    radial-gradient(circle at 90% 10%, rgba(49, 130, 206, 0.1), transparent 40%),
+    radial-gradient(circle at 10% 90%, rgba(56, 161, 105, 0.08), transparent 40%);
+  text-align: center;
+}
+
+.home-hero h1 {
+  font-size: 3.8rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1.5rem;
+}
+
+.home-hero p {
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+/* Modern Buttons */
+.home-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.home-actions .btn {
+  padding: 0.8rem 2.2rem;
+  border-radius: 14px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-primary { background: var(--primary); color: white; border: none; box-shadow: 0 4px 14px rgba(49, 130, 206, 0.3); }
+.btn-success { background: var(--secondary); color: white; border: none; box-shadow: 0 4px 14px rgba(56, 161, 105, 0.3); }
+.btn-dark { background: var(--dark); color: white; border: none; }
+
+.home-actions .btn:hover {
+  transform: translateY(-4px);
+  filter: brightness(1.1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+/* Section Containers */
+.home-section {
+  background: #ffffff;
+  border: 1px solid #edf2f7;
+  border-radius: 30px;
+  padding: 4rem 3rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.home-section h3 {
+  font-weight: 800;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  color: #2d3748;
+}
+
+/* Doctor Grid */
+.doctor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.doctor-card {
+  padding: 2.5rem 1.5rem;
+  border-radius: 24px;
+  border: 1px solid #f0f4f8;
+  background: #fff;
+  text-align: center;
+  transition: all 0.4s ease;
+}
+
+.doctor-card:hover {
+  border-color: var(--primary);
+  transform: scale(1.03);
+  box-shadow: 0 15px 35px rgba(49, 130, 206, 0.1);
+}
+
+.doctor-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 35% 65% 70% 30% / 30% 30% 70% 70%; /* Organic shape */
+  object-fit: cover;
+  border: 4px solid #ebf8ff;
+  margin-bottom: 1.5rem;
+}
+
+/* Footer Styling */
+.main-footer {
+  background: var(--dark);
+  color: #a0aec0;
+  padding: 5rem 0 3rem;
+  margin-top: 6rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  border-bottom: 1px solid #2d3748;
+  padding-bottom: 3rem;
+}
+
+.footer-section h4 { color: #fff; margin-bottom: 1.5rem; font-weight: 700; }
+.footer-links { list-style: none; padding: 0; }
+.footer-links li { margin-bottom: 0.8rem; }
+.footer-links a { color: inherit; text-decoration: none; transition: 0.3s; }
+.footer-links a:hover { color: #fff; }
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 1199px) {
+  .home-hero {
+    padding: 6.5rem 0 4.5rem;
+  }
+
+  .home-hero h1 {
+    font-size: 3rem;
+  }
+
+  .home-hero p {
+    font-size: 1.08rem;
+  }
+
+  .home-section {
+    padding: 3rem 2.2rem;
+    margin-bottom: 2.2rem;
+  }
+}
+
+@media (max-width: 991px) {
+  .navbar {
+    padding: 0.8rem 0;
+  }
+
+  .home-hero {
+    padding: 5.5rem 0 3.8rem;
+  }
+
+  .home-hero h1 {
+    font-size: 2.5rem;
+    line-height: 1.15;
+  }
+
+  .home-hero p {
+    font-size: 1rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .home-section {
+    border-radius: 22px;
+    padding: 2.2rem 1.5rem;
+  }
+
+  .home-section h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.3rem;
+  }
+
+  .doctor-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .doctor-card {
+    padding: 1.6rem 1rem;
+  }
+
+  .main-footer {
+    margin-top: 4rem;
+    padding: 3rem 0 2rem;
+  }
+
+  .footer-grid {
+    gap: 1.6rem;
+    padding-bottom: 1.6rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .nav-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .nav-right {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.6rem;
+  }
+
+  .nav-right .btn,
+  .nav-right .nav-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+
+  .home-hero {
+    padding: 4.6rem 0 3rem;
+  }
+
+  .home-hero h1 {
+    font-size: 2.05rem;
+  }
+
+  .home-hero p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 1.4rem;
+    padding: 0 0.2rem;
+  }
+
+  .home-section {
+    border-radius: 18px;
+    padding: 1.35rem 1rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .doctor-grid {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .doctor-avatar {
+    width: 92px;
+    height: 92px;
+    margin-bottom: 0.8rem;
+  }
+
+  .main-footer {
+    margin-top: 2.2rem;
+    padding: 2rem 0 1.2rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .footer-bottom {
+    padding-top: 1rem;
+    font-size: 0.82rem;
+  }
+}
