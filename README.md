@@ -55,8 +55,13 @@ Example MySQL config in `backend/.env`:
 ```env
 DB_ENGINE=mysql
 DB_NAME=pet_vaccination_db
+<<<<<<< HEAD
 DB_USER=your_mysql_user
 DB_PASSWORD=your_mysql_password
+=======
+DB_USER=user
+DB_PASSWORD=password
+>>>>>>> 23906b91397322dc8b229fa77a84d3cbc5292ee2
 DB_HOST=127.0.0.1
 DB_PORT=3306
 ```
@@ -66,8 +71,13 @@ Create MySQL database/user (adjust as needed):
 ```bash
 sudo systemctl start mysql
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS pet_vaccination_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+<<<<<<< HEAD
 sudo mysql -e "CREATE USER IF NOT EXISTS 'your_mysql_user'@'127.0.0.1' IDENTIFIED BY 'your_mysql_password';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON pet_vaccination_db.* TO 'your_mysql_user'@'127.0.0.1'; FLUSH PRIVILEGES;"
+=======
+sudo mysql -e "CREATE USER IF NOT EXISTS 'user'@'127.0.0.1' IDENTIFIED BY 'password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON pet_vaccination_db.* TO 'vikas'@'127.0.0.1'; FLUSH PRIVILEGES;"
+>>>>>>> 23906b91397322dc8b229fa77a84d3cbc5292ee2
 ```
 
 Run migrations and start backend:
