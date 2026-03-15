@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import API from "../api";
 import { Link } from "react-router-dom";
 import "./DoctorDashboard.css";
@@ -11,6 +11,23 @@ function DoctorDashboard() {
   const [doctorProfile, setDoctorProfile] = useState({ username: "", bio: "", profile_photo_url: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [createMessage, setCreateMessage] = useState("");
+  const [createError, setCreateError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createdOwners, setCreatedOwners] = useState([]);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    owner_username: "",
+    owner_email: "",
+    owner_phone: "",
+    owner_password: "",
+    pet_name: "",
+    pet_breed: "",
+    pet_age: "",
+    pet_vaccination_date: "",
+  });
+  const onboardingFormRef = useRef(null);
+  const ownerUsernameInputRef = useRef(null);
 
   const statusLabel = doctorStatus
     ? `${doctorStatus.charAt(0).toUpperCase()}${doctorStatus.slice(1)}`
@@ -37,6 +54,15 @@ function DoctorDashboard() {
     }
   };
 
+  const loadCreatedOwners = async () => {
+    try {
+      const res = await API.get("pets/doctor/created-owners/");
+      setCreatedOwners(res.data);
+    } catch (err) {
+      setCreatedOwners([]);
+    }
+  };
+
   useEffect(() => {
     if (userId) {
       API.get("accounts/me/")
@@ -50,8 +76,10 @@ function DoctorDashboard() {
           });
           if (status === "approved") {
             loadPets();
+            loadCreatedOwners();
           } else {
             setPets([]);
+            setCreatedOwners([]);
           }
         })
         .catch(() => {
@@ -63,6 +91,68 @@ function DoctorDashboard() {
   const logout = () => {
     localStorage.clear();
     window.location.href = "/";
+  };
+
+  const handleCreateOwnerPet = async () => {
+    setCreateError("");
+    setCreateMessage("");
+    setCreating(true);
+    try {
+      const payload = {
+        owner_username: createForm.owner_username,
+        owner_email: createForm.owner_email,
+        owner_phone: createForm.owner_phone,
+        owner_password: createForm.owner_password,
+        pet_name: createForm.pet_name,
+        pet_breed: createForm.pet_breed,
+        pet_age: createForm.pet_age,
+        pet_vaccination_date: createForm.pet_vaccination_date,
+      };
+      const res = await API.post("pets/doctor/add-owner-pet/", payload);
+      const generated = res.data.generated_password;
+      const temporaryPassword = generated || createForm.owner_password;
+      setCreateMessage(
+        temporaryPassword
+          ? `Owner and pet created. Temporary owner password: ${temporaryPassword}. Owner must reset on first login.`
+          : "Owner and pet created successfully."
+      );
+      setCreateForm({
+        owner_username: "",
+        owner_email: "",
+        owner_phone: "",
+        owner_password: "",
+        pet_name: "",
+        pet_breed: "",
+        pet_age: "",
+        pet_vaccination_date: "",
+      });
+      loadPets(phoneSearch);
+      loadCreatedOwners();
+    } catch (err) {
+      const data = err?.response?.data;
+      if (typeof data === "object" && data !== null) {
+        const firstError = Object.values(data)[0];
+        setCreateError(Array.isArray(firstError) ? firstError[0] : String(firstError));
+      } else {
+        setCreateError("Unable to create owner and pet.");
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const openNewPetRegistry = () => {
+    if (!isOnboardingOpen) {
+      setIsOnboardingOpen(true);
+      // Allow the slide to expand before focusing for better UX.
+      setTimeout(() => {
+        onboardingFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        ownerUsernameInputRef.current?.focus();
+      }, 260);
+      return;
+    }
+    onboardingFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    ownerUsernameInputRef.current?.focus();
   };
 
   return (
@@ -109,6 +199,14 @@ function DoctorDashboard() {
             <h5 className="fw-bold mb-0">Pet Registry</h5>
             
             <div className="d-flex gap-2">
+              <button
+                className="btn btn-success btn-sm"
+                disabled={doctorStatus !== "approved"}
+                onClick={openNewPetRegistry}
+                aria-expanded={isOnboardingOpen}
+              >
+                New Pet Registry
+              </button>
               <input
                 className="form-control form-control-sm"
                 placeholder="Owner phone..."
@@ -140,7 +238,138 @@ function DoctorDashboard() {
             </div>
           ) : (
             <>
+              <div
+                className={`onboarding-slide ${isOnboardingOpen ? "open" : ""}`}
+                ref={onboardingFormRef}
+              >
+                <div className="doctor-create-card mb-4">
+                  <h6 className="fw-bold mb-1">Owner Onboarding</h6>
+                  <p className="text-muted small mb-3">Create a new pet owner account and register their first pet.</p>
+                  <div className="doctor-create-grid">
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Owner Username</label>
+                      <input
+                        ref={ownerUsernameInputRef}
+                        className="form-control form-control-sm"
+                        placeholder="Owner Username"
+                        value={createForm.owner_username}
+                        onChange={(e) => setCreateForm({ ...createForm, owner_username: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Owner Email</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Owner Email"
+                        type="email"
+                        value={createForm.owner_email}
+                        onChange={(e) => setCreateForm({ ...createForm, owner_email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Owner Phone</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Owner Phone"
+                        value={createForm.owner_phone}
+                        onChange={(e) => setCreateForm({ ...createForm, owner_phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Temporary Password (Optional)</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Owner Password (optional)"
+                        type="password"
+                        value={createForm.owner_password}
+                        onChange={(e) => setCreateForm({ ...createForm, owner_password: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Pet Name</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Pet Name"
+                        value={createForm.pet_name}
+                        onChange={(e) => setCreateForm({ ...createForm, pet_name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Pet Breed</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Pet Breed"
+                        value={createForm.pet_breed}
+                        onChange={(e) => setCreateForm({ ...createForm, pet_breed: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Pet Age (Years)</label>
+                      <input
+                        className="form-control form-control-sm"
+                        placeholder="Pet Age"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={createForm.pet_age}
+                        onChange={(e) => setCreateForm({ ...createForm, pet_age: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label small fw-semibold mb-1">Last Vaccination Date</label>
+                      <input
+                        className="form-control form-control-sm"
+                        type="date"
+                        value={createForm.pet_vaccination_date}
+                        onChange={(e) => setCreateForm({ ...createForm, pet_vaccination_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="d-flex justify-content-end mt-3">
+                    <button className="btn btn-primary btn-sm" onClick={handleCreateOwnerPet} disabled={creating}>
+                      {creating ? "Creating..." : "Create Owner + Pet"}
+                    </button>
+                  </div>
+                  {createError && <div className="alert alert-danger mt-3 mb-0 py-2">{createError}</div>}
+                  {createMessage && <div className="alert alert-success mt-3 mb-0 py-2">{createMessage}</div>}
+                </div>
+              </div>
+
               {error && <div className="alert alert-danger rounded-3">{error}</div>}
+              <div className="table-responsive mb-4">
+                <h6 className="fw-bold mb-1">Doctor-Created Owner Accounts</h6>
+                <p className="text-muted small mb-3">Track accounts you onboarded and their password-reset status.</p>
+                <table className="table table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th>Owner</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Reset Required</th>
+                      <th>Pets</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {createdOwners.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="text-center py-3 text-muted">
+                          No owners created by you yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      createdOwners.map((owner) => (
+                        <tr key={owner.id}>
+                          <td>{owner.username}</td>
+                          <td>{owner.email}</td>
+                          <td>{owner.phone}</td>
+                          <td>{owner.force_password_reset ? "Yes" : "No"}</td>
+                          <td>{owner.pets?.map((p) => p.name).join(", ") || "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
               {loading ? (
                 <div className="text-center py-4"><p className="text-muted">Loading pets...</p></div>
               ) : (

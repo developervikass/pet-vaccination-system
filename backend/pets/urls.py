@@ -3,6 +3,8 @@ from .views import *
 
 urlpatterns = [
     path('add/', AddPet.as_view()),
+    path('doctor/add-owner-pet/', DoctorCreateOwnerPet.as_view()),
+    path('doctor/created-owners/', DoctorCreatedOwnersView.as_view()),
     path('update/<int:pk>/', UpdatePet.as_view()),
     path('delete/<int:pk>/', DeletePet.as_view()),
     path('owner/<int:owner_id>/', OwnerPets.as_view()),

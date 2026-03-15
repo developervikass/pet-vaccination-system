@@ -2,6 +2,7 @@ import random
 import smtplib
 from datetime import timedelta
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
@@ -11,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework import status
-from .serializers import RegisterSerializer, CreateAdminSerializer
+from .serializers import RegisterSerializer, CreateAdminSerializer, LoginSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 User = get_user_model()
@@ -92,6 +93,7 @@ class MeView(APIView):
                 "doctor_approved": request.user.doctor_approved,
                 "doctor_verified": request.user.doctor_verified,
                 "is_active": request.user.is_active,
+                "force_password_reset": request.user.force_password_reset,
             }
         )
 
@@ -198,13 +200,16 @@ class CreateAdminView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
+
     def post(self, request, *args, **kwargs):
         selected_role = request.data.get("role")
         if selected_role and selected_role not in ["owner", "doctor", "admin"]:
             return Response({"detail": "Invalid role selected."}, status=status.HTTP_400_BAD_REQUEST)
 
         response = super().post(request, *args, **kwargs)
-        user = User.objects.filter(username=request.data.get("username")).first()
+        identifier = (request.data.get("username") or request.data.get("email") or "").strip()
+        user = User.objects.filter(Q(username__iexact=identifier) | Q(email__iexact=identifier)).first()
         if not user:
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
         if selected_role and user.role != selected_role:
@@ -215,6 +220,7 @@ class LoginView(TokenObtainPairView):
         response.data["role"] = user.role
         response.data["user_id"] = user.id
         response.data["doctor_status"] = user.doctor_status
+        response.data["force_password_reset"] = user.force_password_reset
         return response
 
 
@@ -295,5 +301,29 @@ class ResetPasswordView(APIView):
         user.set_password(new_password)
         user.reset_otp = None
         user.reset_otp_expires_at = None
+        user.force_password_reset = False
         user.save()
         return Response({"message": "Password reset successful"})
+
+
+class FirstLoginPasswordResetView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return Response(
+                {"message": "current_password and new_password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not request.user.check_password(current_password):
+            return Response({"message": "Current password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+
+        request.user.set_password(new_password)
+        request.user.force_password_reset = False
+        request.user.dashboard_password = None
+        request.user.save(update_fields=["password", "force_password_reset", "dashboard_password"])
+        return Response({"message": "Password updated successfully. You can continue now."})

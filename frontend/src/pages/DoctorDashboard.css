@@ -71,6 +71,33 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 }
 
+.doctor-create-card {
+  background: #f8fbff;
+  border: 1px solid #d8e8ff;
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.onboarding-slide {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: max-height 0.35s ease, opacity 0.3s ease, transform 0.35s ease;
+}
+
+.onboarding-slide.open {
+  max-height: 1200px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.doctor-create-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
 .table thead th {
   background: #f8fafc;
   border-bottom: 2px solid #f1f5f9;
@@ -109,4 +136,16 @@
   border-width: 2px;
   border-radius: 8px;
   font-weight: 700;
+}
+
+@media (max-width: 992px) {
+  .doctor-create-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 576px) {
+  .doctor-create-grid {
+    grid-template-columns: 1fr;
+  }
 }

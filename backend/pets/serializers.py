@@ -45,3 +45,14 @@ class PetProfileSerializer(PetSerializer):
 
     class Meta(PetSerializer.Meta):
         fields = PetSerializer.Meta.fields + ["summaries"]
+
+
+class DoctorCreateOwnerPetSerializer(serializers.Serializer):
+    owner_username = serializers.CharField(max_length=150)
+    owner_email = serializers.EmailField()
+    owner_phone = serializers.CharField(max_length=15)
+    owner_password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    pet_name = serializers.CharField(max_length=100)
+    pet_age = serializers.DecimalField(max_digits=5, decimal_places=2)
+    pet_breed = serializers.CharField(max_length=100)
+    pet_vaccination_date = serializers.DateField()

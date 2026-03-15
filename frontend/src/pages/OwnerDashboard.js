@@ -7,6 +7,8 @@ function OwnerDashboard() {
   const [pets, setPets] = useState([]);
   const [petData, setPetData] = useState({ name: "", age: "", breed: "", vaccination_date: "" });
   const [photoFile, setPhotoFile] = useState(null);
+  const [mustResetPassword, setMustResetPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current_password: "", new_password: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,8 +27,34 @@ function OwnerDashboard() {
   };
 
   useEffect(() => {
-    loadPets();
+    API.get("accounts/me/")
+      .then((res) => {
+        const required = Boolean(res.data.force_password_reset);
+        setMustResetPassword(required);
+        localStorage.setItem("force_password_reset", String(required));
+        if (!required) {
+          loadPets();
+        }
+      })
+      .catch(() => {
+        setError("Unable to load account details. Please login again.");
+      });
   }, []);
+
+  const resetTemporaryPassword = async () => {
+    setError("");
+    setSuccess("");
+    try {
+      const res = await API.post("accounts/first-login-reset/", passwordForm);
+      setSuccess(res.data.message || "Password updated successfully.");
+      setMustResetPassword(false);
+      localStorage.setItem("force_password_reset", "false");
+      setPasswordForm({ current_password: "", new_password: "" });
+      loadPets();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to update password.");
+    }
+  };
 
   const addPet = async () => {
     setError("");
@@ -85,6 +113,40 @@ function OwnerDashboard() {
           </button>
         </div>
 
+        {mustResetPassword ? (
+          <div className="owner-panel mb-5">
+            <h5>Reset Temporary Password</h5>
+            <p className="text-muted mb-3">
+              Your account was created by a doctor. Set a new password to continue.
+            </p>
+            <div className="owner-form-grid">
+              <div>
+                <label className="form-label">Current Temporary Password</label>
+                <input
+                  className="form-control owner-input"
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="form-label">New Password</label>
+                <input
+                  className="form-control owner-input"
+                  type="password"
+                  value={passwordForm.new_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                />
+              </div>
+            </div>
+            <button className="btn btn-primary mt-4 px-5 fw-bold rounded-pill" onClick={resetTemporaryPassword}>
+              Update Password
+            </button>
+            {error && <div className="text-danger mt-2">{error}</div>}
+            {success && <div className="text-success mt-2">{success}</div>}
+          </div>
+        ) : (
+        <>
         {/* Add Pet Section */}
         <div className="owner-panel mb-5">
           <h5>🐾 Register a New Pet</h5>
@@ -180,6 +242,8 @@ function OwnerDashboard() {
             ))}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

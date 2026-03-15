@@ -35,6 +35,7 @@ function Login({ adminOnly = false, allowedRole = null, title = "Login" }) {
       }
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("user_id", String(res.data.user_id));
+      localStorage.setItem("force_password_reset", String(Boolean(res.data.force_password_reset)));
 
       if (adminOnly && res.data.role !== "admin") {
         localStorage.clear();

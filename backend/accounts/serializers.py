@@ -1,5 +1,9 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 from .models import User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -65,3 +69,37 @@ class CreateAdminSerializer(serializers.ModelSerializer):
             doctor_approved=True,
             doctor_verified=True,
         )
+
+
+class LoginSerializer(TokenObtainPairSerializer):
+    # Allow clients to send either "username" or "email" as identifier.
+    email = serializers.EmailField(required=False)
+
+    def to_internal_value(self, data):
+        mutable = data.copy()
+        identifier = (mutable.get("username") or mutable.get("email") or "").strip()
+        if identifier and not mutable.get("username"):
+            mutable["username"] = identifier
+        return super().to_internal_value(mutable)
+
+    def validate(self, attrs):
+        identifier = (attrs.get("username") or "").strip()
+        password = attrs.get("password")
+
+        if not identifier or not password:
+            raise AuthenticationFailed("No active account found with the given credentials")
+
+        user_model = get_user_model()
+        user = user_model.objects.filter(
+            Q(username__iexact=identifier) | Q(email__iexact=identifier)
+        ).first()
+
+        if not user or not user.check_password(password) or not user.is_active:
+            raise AuthenticationFailed("No active account found with the given credentials")
+
+        refresh = self.get_token(user)
+        self.user = user
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }

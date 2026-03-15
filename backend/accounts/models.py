@@ -26,3 +26,12 @@ class User(AbstractUser):
     doctor_verified = models.BooleanField(default=True)
     reset_otp = models.CharField(max_length=6, blank=True, null=True)
     reset_otp_expires_at = models.DateTimeField(blank=True, null=True)
+    created_by_doctor = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_owners",
+    )
+    dashboard_password = models.CharField(max_length=128, blank=True, null=True)
+    force_password_reset = models.BooleanField(default=False)

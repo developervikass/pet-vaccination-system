@@ -55,8 +55,8 @@ Example MySQL config in `backend/.env`:
 ```env
 DB_ENGINE=mysql
 DB_NAME=pet_vaccination_db
-DB_USER=vikas
-DB_PASSWORD=vikas123
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
 DB_HOST=127.0.0.1
 DB_PORT=3306
 ```
@@ -66,8 +66,8 @@ Create MySQL database/user (adjust as needed):
 ```bash
 sudo systemctl start mysql
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS pet_vaccination_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-sudo mysql -e "CREATE USER IF NOT EXISTS 'vikas'@'127.0.0.1' IDENTIFIED BY 'vikas123';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON pet_vaccination_db.* TO 'vikas'@'127.0.0.1'; FLUSH PRIVILEGES;"
+sudo mysql -e "CREATE USER IF NOT EXISTS 'your_mysql_user'@'127.0.0.1' IDENTIFIED BY 'your_mysql_password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON pet_vaccination_db.* TO 'your_mysql_user'@'127.0.0.1'; FLUSH PRIVILEGES;"
 ```
 
 Run migrations and start backend:
@@ -110,3 +110,7 @@ python manage.py migrate
 
 - Do not commit `backend/.env` (already ignored).
 - Keep real email/MySQL passwords only in `.env`.
+
+## Additional Documentation
+
+- Auth + role + DB verification guide: `docs/AUTH_AND_DATABASE_GUIDE.md`
