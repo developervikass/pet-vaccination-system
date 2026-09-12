@@ -53,6 +53,61 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    profile_photo_url = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "email",
+            "phone",
+            "bio",
+            "profile_photo",
+            "profile_photo_url",
+        ]
+        extra_kwargs = {
+            "username": {"required": False},
+            "email": {"required": False},
+            "phone": {"required": False},
+            "bio": {"required": False},
+            "profile_photo": {"required": False},
+        }
+
+    def get_profile_photo_url(self, obj):
+        if not obj.profile_photo:
+            return None
+        request = self.context.get("request")
+        url = obj.profile_photo.url
+        return request.build_absolute_uri(url) if request else url
+
+    def validate_username(self, value):
+        if not value:
+            return value
+        # If the username is unchanged, allow the update even if duplicates exist in DB
+        if self.instance and value == getattr(self.instance, "username", None):
+            return value
+        qs = User.objects.filter(username__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Username already in use.")
+        return value
+
+    def validate_email(self, value):
+        if not value:
+            return value
+        # Allow keeping the same email even if other accounts share it (legacy data)
+        if self.instance and value.lower() == (getattr(self.instance, "email", "") or "").lower():
+            return value
+        qs = User.objects.filter(email__iexact=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Email already in use.")
+        return value
+
+
 class CreateAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

@@ -16,10 +16,22 @@ if env_file.exists():
         value = value.strip().strip('"').strip("'")
         os.environ.setdefault(key, value)
 
-SECRET_KEY = 'secret'
+# SECRET_KEY is loaded from environment (see .env.example).  Provide a strong
+# fallback for local development while preventing the insecure 6‑byte default
+# that triggered runtime warnings.
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "dev-secret-key-please-change-this-to-a-long-random-value-32chars+",
+)
+
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "pet-backend-service",
+    "192.168.49.2",
+]
 
 TEMPLATES = [
     {
@@ -66,29 +78,21 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'backend.urls'
 
-DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
-
-if DB_ENGINE == "mysql":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("DB_NAME", "pet_vaccination_db"),
-            "USER": os.getenv("DB_USER", "vikas"),
-            "PASSWORD": os.getenv("DB_PASSWORD", "vikas123"),
-            "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-            "PORT": os.getenv("DB_PORT", "3306"),
-            "OPTIONS": {
-                "charset": "utf8mb4",
-            },
-        }
+# MySQL is the required database backend for this project.
+# SQLite support has been removed so app data is always stored in MySQL.
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.getenv("DB_NAME", "pet_vaccination_db"),
+        "USER": os.getenv("DB_USER", "vikas"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "vikas123"),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT", "3306"),
+        "OPTIONS": {
+            "charset": "utf8mb4",
+        },
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+}
 
 AUTH_USER_MODEL = 'accounts.User'
 REST_FRAMEWORK = {
@@ -109,6 +113,7 @@ EMAIL_BACKEND = os.getenv(
     "EMAIL_BACKEND",
     "django.core.mail.backends.smtp.EmailBackend",
 )
+
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"

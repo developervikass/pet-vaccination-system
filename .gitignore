@@ -41,3 +41,7 @@ frontend/.env
 .DS_Store
 Thumbs.db
 backend/sqlite_export.json
+
+.codex/
+mysql-secret.yaml
+/.codex
