@@ -9,6 +9,12 @@ function OwnerDashboard() {
   const [photoFile, setPhotoFile] = useState(null);
   const [mustResetPassword, setMustResetPassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ current_password: "", new_password: "" });
+  const [profile, setProfile] = useState({ username: "", email: "", phone: "", bio: "", profile_photo_url: "" });
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,6 +38,13 @@ function OwnerDashboard() {
         const required = Boolean(res.data.force_password_reset);
         setMustResetPassword(required);
         localStorage.setItem("force_password_reset", String(required));
+        setProfile({
+          username: res.data.username || "",
+          email: res.data.email || "",
+          phone: res.data.phone || "",
+          bio: res.data.bio || "",
+          profile_photo_url: res.data.profile_photo_url || "",
+        });
         if (!required) {
           loadPets();
         }
@@ -40,6 +53,45 @@ function OwnerDashboard() {
         setError("Unable to load account details. Please login again.");
       });
   }, []);
+
+  const updateProfile = async () => {
+    setProfileError("");
+    setProfileSuccess("");
+    const formData = new FormData();
+    formData.append("username", profile.username);
+    formData.append("email", profile.email);
+    formData.append("phone", profile.phone);
+    formData.append("bio", profile.bio);
+    if (profilePhoto) {
+      formData.append("profile_photo", profilePhoto);
+    }
+    setSavingProfile(true);
+    try {
+      const res = await API.patch("accounts/profile/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setProfile({
+        username: res.data.username || "",
+        email: res.data.email || "",
+        phone: res.data.phone || "",
+        bio: res.data.bio || "",
+        profile_photo_url: res.data.profile_photo_url || profile.profile_photo_url,
+      });
+      setProfilePhoto(null);
+      setProfileSuccess("Profile updated successfully.");
+    } catch (err) {
+      const data = err?.response?.data;
+      if (data && typeof data === "object") {
+        const firstKey = Object.keys(data)[0];
+        const firstVal = data[firstKey];
+        setProfileError(Array.isArray(firstVal) ? firstVal[0] : String(firstVal));
+      } else {
+        setProfileError("Failed to update profile.");
+      }
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const resetTemporaryPassword = async () => {
     setError("");
@@ -147,6 +199,94 @@ function OwnerDashboard() {
           </div>
         ) : (
         <>
+        {/* Profile Section */}
+        <div className="owner-panel mb-5">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div className="d-flex align-items-center gap-3">
+              <img
+                className="owner-profile-avatar"
+                src={profile.profile_photo_url || "https://via.placeholder.com/80?text=You"}
+                alt={profile.username || "Owner"}
+              />
+              <div>
+                <h5 className="mb-1">{profile.username || "Your Profile"}</h5>
+                <p className="text-muted small mb-0">Update your contact details and display photo.</p>
+              </div>
+            </div>
+            <div className="d-flex align-items-center gap-2">
+              <span className="text-muted small">Your profile is visible to doctors for appointment context.</span>
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => setShowProfileEdit((v) => !v)}
+              >
+                {showProfileEdit ? "Close" : "Edit Profile"}
+              </button>
+            </div>
+          </div>
+          {showProfileEdit && (
+            <>
+              <div className="owner-form-grid">
+                <div>
+                  <label className="form-label">Full Name / Username</label>
+                  <input
+                    className="form-control owner-input"
+                    value={profile.username}
+                    onChange={(e) => setProfile({ ...profile, username: e.target.value })}
+                    placeholder="e.g. Priya Sharma"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Email</label>
+                  <input
+                    className="form-control owner-input"
+                    type="email"
+                    value={profile.email}
+                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Phone</label>
+                  <input
+                    className="form-control owner-input"
+                    value={profile.phone}
+                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    placeholder="e.g. +1 555 123 4567"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Bio / Notes</label>
+                  <textarea
+                    className="form-control owner-input"
+                    rows={2}
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    placeholder="A short note for your vet"
+                  />
+                </div>
+                <div className="owner-file-field">
+                  <label className="form-label">Profile Photo</label>
+                  <input
+                    className="form-control owner-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                  />
+                </div>
+              </div>
+              <button
+                className="btn btn-primary mt-4 px-5 fw-bold rounded-pill"
+                onClick={updateProfile}
+                disabled={savingProfile}
+              >
+                {savingProfile ? "Saving..." : "Save Profile"}
+              </button>
+              {profileError && <div className="text-danger mt-2">{profileError}</div>}
+              {profileSuccess && <div className="text-success mt-2">{profileSuccess}</div>}
+            </>
+          )}
+        </div>
+
         {/* Add Pet Section */}
         <div className="owner-panel mb-5">
           <h5>🐾 Register a New Pet</h5>

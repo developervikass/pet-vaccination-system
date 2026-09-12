@@ -94,6 +94,24 @@
   box-shadow: 0 10px 20px rgba(49, 130, 206, 0.2);
 }
 
+/* Keep the inactive option at its normal size. The active option grows only
+   vertically from its centre, so both buttons retain equal widths. */
+.admin-login-toggle .btn {
+  margin-top: 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-login-toggle .admin-login-toggle-active {
+  position: relative;
+  z-index: 1;
+  transform: scaleY(1.12);
+  box-shadow: 0 5px 12px rgba(49, 130, 206, 0.2);
+}
+
+.admin-login-toggle .admin-login-toggle-active:hover {
+  transform: scaleY(1.12);
+}
+
 .text-danger {
   background: rgba(255, 245, 245, 0.8);
   color: #c53030;

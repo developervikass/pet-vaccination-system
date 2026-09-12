@@ -8,7 +8,13 @@ function DoctorDashboard() {
   const [phoneSearch, setPhoneSearch] = useState("");
   const userId = localStorage.getItem("user_id");
   const [doctorStatus, setDoctorStatus] = useState("");
-  const [doctorProfile, setDoctorProfile] = useState({ username: "", bio: "", profile_photo_url: "" });
+  const [doctorProfile, setDoctorProfile] = useState({ username: "", bio: "", profile_photo_url: "", email: "", phone: "" });
+  const [profileForm, setProfileForm] = useState({ username: "", bio: "", email: "", phone: "" });
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [createMessage, setCreateMessage] = useState("");
@@ -73,6 +79,14 @@ function DoctorDashboard() {
             username: res.data.username || "",
             bio: res.data.bio || "",
             profile_photo_url: res.data.profile_photo_url || "",
+            email: res.data.email || "",
+            phone: res.data.phone || "",
+          });
+          setProfileForm({
+            username: res.data.username || "",
+            bio: res.data.bio || "",
+            email: res.data.email || "",
+            phone: res.data.phone || "",
           });
           if (status === "approved") {
             loadPets();
@@ -155,6 +169,51 @@ function DoctorDashboard() {
     ownerUsernameInputRef.current?.focus();
   };
 
+  const updateDoctorProfile = async () => {
+    setProfileError("");
+    setProfileMessage("");
+    const formData = new FormData();
+    formData.append("username", profileForm.username);
+    formData.append("bio", profileForm.bio);
+    formData.append("email", profileForm.email);
+    formData.append("phone", profileForm.phone);
+    if (profilePhoto) {
+      formData.append("profile_photo", profilePhoto);
+    }
+    setProfileSaving(true);
+    try {
+      const res = await API.patch("accounts/profile/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setDoctorProfile({
+        username: res.data.username || "",
+        bio: res.data.bio || "",
+        profile_photo_url: res.data.profile_photo_url || doctorProfile.profile_photo_url,
+        email: res.data.email || "",
+        phone: res.data.phone || "",
+      });
+      setProfileForm({
+        username: res.data.username || "",
+        bio: res.data.bio || "",
+        email: res.data.email || "",
+        phone: res.data.phone || "",
+      });
+      setProfilePhoto(null);
+      setProfileMessage("Profile updated successfully.");
+    } catch (err) {
+      const data = err?.response?.data;
+      if (data && typeof data === "object") {
+        const firstKey = Object.keys(data)[0];
+        const firstVal = data[firstKey];
+        setProfileError(Array.isArray(firstVal) ? firstVal[0] : String(firstVal));
+      } else {
+        setProfileError("Failed to update profile.");
+      }
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   return (
     <div className="dashboard-wrap">
       <div className="container">
@@ -178,6 +237,10 @@ function DoctorDashboard() {
               <div className="doctor-info-section">
                 <h5>Dr. {doctorProfile.username || "Doctor"}</h5>
                 {doctorProfile.bio && <p className="mb-2 text-muted small">{doctorProfile.bio}</p>}
+                <div className="text-muted small">
+                  {doctorProfile.email && <span className="me-3">{doctorProfile.email}</span>}
+                  {doctorProfile.phone && <span>{doctorProfile.phone}</span>}
+                </div>
                 <div className="d-flex align-items-center gap-2">
                   <span className="status-label-text">Status:</span>
                   <span className={`badge ${statusBadgeClass} px-3 py-2 rounded-pill`}>{statusLabel}</span>
@@ -191,6 +254,87 @@ function DoctorDashboard() {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Profile Settings */}
+        <div className="doctor-main-card mb-4">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+            <div>
+              <h6 className="fw-bold mb-1">Profile Settings</h6>
+              <p className="text-muted small mb-0">Update your name, contact info and display photo.</p>
+            </div>
+            <div className="d-flex gap-2">
+              {showProfileEdit && (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={updateDoctorProfile}
+                  disabled={profileSaving}
+                >
+                  {profileSaving ? "Saving..." : "Save Changes"}
+                </button>
+              )}
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={() => setShowProfileEdit((v) => !v)}
+              >
+                {showProfileEdit ? "Close" : "Edit Profile"}
+              </button>
+            </div>
+          </div>
+          {showProfileEdit && (
+            <>
+              <div className="doctor-create-grid">
+                <div>
+                  <label className="form-label small fw-semibold mb-1">Display Name</label>
+                  <input
+                    className="form-control form-control-sm"
+                    value={profileForm.username}
+                    onChange={(e) => setProfileForm({ ...profileForm, username: e.target.value })}
+                    placeholder="Dr. Jane Doe"
+                  />
+                </div>
+                <div>
+                  <label className="form-label small fw-semibold mb-1">Email</label>
+                  <input
+                    className="form-control form-control-sm"
+                    type="email"
+                    value={profileForm.email}
+                    onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                    placeholder="doctor@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="form-label small fw-semibold mb-1">Phone</label>
+                  <input
+                    className="form-control form-control-sm"
+                    value={profileForm.phone}
+                    onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                    placeholder="+1 555 123 4567"
+                  />
+                </div>
+                <div>
+                  <label className="form-label small fw-semibold mb-1">Bio</label>
+                  <input
+                    className="form-control form-control-sm"
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                    placeholder="Short professional bio"
+                  />
+                </div>
+                <div>
+                  <label className="form-label small fw-semibold mb-1">Profile Photo</label>
+                  <input
+                    className="form-control form-control-sm"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)}
+                  />
+                </div>
+              </div>
+              {profileError && <div className="alert alert-danger mt-3 mb-0 py-2">{profileError}</div>}
+              {profileMessage && <div className="alert alert-success mt-3 mb-0 py-2">{profileMessage}</div>}
+            </>
+          )}
         </div>
 
         {/* Search & Table Section */}

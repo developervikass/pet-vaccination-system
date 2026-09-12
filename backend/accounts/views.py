@@ -1,6 +1,8 @@
 import random
 import smtplib
+import secrets
 from datetime import timedelta
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -12,10 +14,32 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from rest_framework import status
-from .serializers import RegisterSerializer, CreateAdminSerializer, LoginSerializer
+from .serializers import (
+    RegisterSerializer,
+    CreateAdminSerializer,
+    LoginSerializer,
+    UserProfileSerializer,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
+
+
+def send_admin_otp(email, otp, purpose):
+    """Send an admin OTP by email without exposing the code in an API response."""
+    if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+        raise RuntimeError("Email OTP is not configured.")
+    try:
+        send_mail(
+            subject=f"Pet Vaccination System Admin {purpose.title()} OTP",
+            message=f"Your admin {purpose} OTP is {otp}. It expires in 2 minutes.",
+            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+    except smtplib.SMTPException as exc:
+        raise RuntimeError("Unable to send the email OTP.") from exc
 
 
 class RegisterView(APIView):
@@ -79,16 +103,12 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(
+        serializer = UserProfileSerializer(request.user, context={"request": request})
+        data = serializer.data
+        data.update(
             {
                 "id": request.user.id,
-                "username": request.user.username,
-                "email": request.user.email,
                 "role": request.user.role,
-                "bio": request.user.bio,
-                "profile_photo_url": request.build_absolute_uri(request.user.profile_photo.url)
-                if request.user.profile_photo
-                else None,
                 "doctor_status": request.user.doctor_status,
                 "doctor_approved": request.user.doctor_approved,
                 "doctor_verified": request.user.doctor_verified,
@@ -96,6 +116,23 @@ class MeView(APIView):
                 "force_password_reset": request.user.force_password_reset,
             }
         )
+        return Response(data)
+
+
+class UpdateProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = UserProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DeleteUser(APIView):
@@ -222,6 +259,131 @@ class LoginView(TokenObtainPairView):
         response.data["doctor_status"] = user.doctor_status
         response.data["force_password_reset"] = user.force_password_reset
         return response
+
+
+class AdminEmailOtpRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip()
+        if not email:
+            return Response({"message": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        admins = User.objects.filter(email__iexact=email, role="admin", is_active=True)
+        # Do not disclose whether an email belongs to an administrator.
+        if admins.count() != 1:
+            return Response({"message": "If this is a registered admin email, an OTP will be sent."})
+
+        otp = f"{secrets.randbelow(1_000_000):06d}"
+        admin = admins.first()
+        admin.admin_login_otp = make_password(otp)
+        # Saving a fresh hash replaces (and therefore invalidates) every prior OTP.
+        admin.admin_login_otp_expires_at = timezone.now() + timedelta(minutes=2)
+        admin.save(update_fields=["admin_login_otp", "admin_login_otp_expires_at"])
+
+        try:
+            send_admin_otp(email, otp, "login")
+        except RuntimeError as exc:
+            admin.admin_login_otp = None
+            admin.admin_login_otp_expires_at = None
+            admin.save(update_fields=["admin_login_otp", "admin_login_otp_expires_at"])
+            return Response({"message": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({"message": "If this is a registered admin email, an OTP will be sent."})
+
+
+class AdminEmailOtpVerifyView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip()
+        otp = (request.data.get("otp") or "").strip()
+        if not email or not otp:
+            return Response({"message": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        admin = User.objects.filter(email__iexact=email, role="admin", is_active=True).first()
+        if (
+            not admin
+            or not admin.admin_login_otp
+            or not admin.admin_login_otp_expires_at
+            or admin.admin_login_otp_expires_at < timezone.now()
+            or not check_password(otp, admin.admin_login_otp)
+        ):
+            return Response({"detail": "Invalid or expired OTP."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        admin.admin_login_otp = None
+        admin.admin_login_otp_expires_at = None
+        admin.save(update_fields=["admin_login_otp", "admin_login_otp_expires_at"])
+        refresh = RefreshToken.for_user(admin)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "role": admin.role,
+            "user_id": admin.id,
+            "doctor_status": admin.doctor_status,
+            "force_password_reset": admin.force_password_reset,
+        })
+
+
+class AdminPasswordResetEmailOtpRequestView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip()
+        if not email:
+            return Response({"message": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        admins = User.objects.filter(email__iexact=email, role="admin", is_active=True)
+        if admins.count() != 1:
+            return Response({"message": "If this is a registered admin email, an OTP will be sent."})
+
+        otp = f"{secrets.randbelow(1_000_000):06d}"
+        admin = admins.first()
+        admin.admin_password_reset_otp = make_password(otp)
+        admin.admin_password_reset_otp_expires_at = timezone.now() + timedelta(minutes=2)
+        admin.save(update_fields=["admin_password_reset_otp", "admin_password_reset_otp_expires_at"])
+
+        try:
+            send_admin_otp(email, otp, "password reset")
+        except RuntimeError as exc:
+            admin.admin_password_reset_otp = None
+            admin.admin_password_reset_otp_expires_at = None
+            admin.save(update_fields=["admin_password_reset_otp", "admin_password_reset_otp_expires_at"])
+            return Response({"message": str(exc)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({"message": "If this is a registered admin email, an OTP will be sent."})
+
+
+class AdminPasswordResetEmailOtpConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("email") or "").strip()
+        otp = (request.data.get("otp") or "").strip()
+        new_password = request.data.get("new_password") or ""
+        if not email or not otp or not new_password:
+            return Response(
+                {"message": "Email, OTP and new password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(new_password) < 8:
+            return Response({"message": "New password must be at least 8 characters."}, status=status.HTTP_400_BAD_REQUEST)
+
+        admin = User.objects.filter(email__iexact=email, role="admin", is_active=True).first()
+        if (
+            not admin
+            or not admin.admin_password_reset_otp
+            or not admin.admin_password_reset_otp_expires_at
+            or admin.admin_password_reset_otp_expires_at < timezone.now()
+            or not check_password(otp, admin.admin_password_reset_otp)
+        ):
+            return Response({"detail": "Invalid or expired OTP."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        admin.set_password(new_password)
+        admin.admin_password_reset_otp = None
+        admin.admin_password_reset_otp_expires_at = None
+        admin.save(update_fields=["password", "admin_password_reset_otp", "admin_password_reset_otp_expires_at"])
+        return Response({"message": "Password reset successful. You can now sign in."})
 
 
 class ForgotPasswordView(APIView):

@@ -30,6 +30,15 @@
   margin-bottom: 1.5rem;
 }
 
+.owner-profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
 /* Grid for adding pets */
 .owner-form-grid {
   display: grid;

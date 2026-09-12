@@ -1,6 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from unittest.mock import patch
+from datetime import timedelta
 
 
 class AuthAndRoleTests(APITestCase):
@@ -35,6 +39,8 @@ class AuthAndRoleTests(APITestCase):
         )
         self.login_url = "/api/accounts/login/"
         self.all_users_url = "/api/accounts/all/"
+        self.admin_otp_url = "/api/accounts/admin/email-otp/"
+        self.admin_otp_verify_url = "/api/accounts/admin/email-otp/verify/"
 
     def login(self, identifier, role=None):
         payload = {"password": self.password}
@@ -69,6 +75,49 @@ class AuthAndRoleTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("access", response.data)
         self.assertEqual(response.data["role"], "admin")
+
+    @patch("accounts.views.send_admin_otp")
+    def test_admin_can_request_email_otp(self, send_otp):
+        response = self.client.post(self.admin_otp_url, {"email": self.admin.email}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.admin_login_otp)
+        self.assertIsNotNone(self.admin.admin_login_otp_expires_at)
+        send_otp.assert_called_once()
+
+    def test_admin_can_login_with_valid_email_otp(self):
+        self.admin.admin_login_otp = make_password("123456")
+        self.admin.admin_login_otp_expires_at = timezone.now() + timedelta(minutes=10)
+        self.admin.save(update_fields=["admin_login_otp", "admin_login_otp_expires_at"])
+
+        response = self.client.post(
+            self.admin_otp_verify_url,
+            {"email": self.admin.email, "otp": "123456"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertEqual(response.data["role"], "admin")
+        self.admin.refresh_from_db()
+        self.assertIsNone(self.admin.admin_login_otp)
+
+    def test_admin_can_reset_password_with_valid_email_otp(self):
+        self.admin.admin_password_reset_otp = make_password("123456")
+        self.admin.admin_password_reset_otp_expires_at = timezone.now() + timedelta(minutes=2)
+        self.admin.save(update_fields=["admin_password_reset_otp", "admin_password_reset_otp_expires_at"])
+
+        response = self.client.post(
+            "/api/accounts/admin/password-reset/email-otp/confirm/",
+            {"email": self.admin.email, "otp": "123456", "new_password": "NewPass123!"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.check_password("NewPass123!"))
+        self.assertIsNone(self.admin.admin_password_reset_otp)
 
     def test_role_mismatch_returns_403(self):
         response = self.login(self.admin.email, role="owner")
